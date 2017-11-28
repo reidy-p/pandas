@@ -1062,6 +1062,7 @@ class TextFileReader(BaseIterator):
             if self.options.get('skipfooter'):
                 raise ValueError('skipfooter not supported for iteration')
 
+        # where the two engines diverge
         ret = self._engine.read(nrows)
 
         if self.options.get('as_recarray'):
@@ -1848,6 +1849,9 @@ class CParserWrapper(ParserBase):
 
     def read(self, nrows=None):
         try:
+            # Could we make the case for line 2 with engine='c'
+            # like all the other lines? All other lines throws an error here
+            # but line 2 does not
             data = self._reader.read(nrows)
         except StopIteration:
             if self._first_chunk:
@@ -1890,7 +1894,24 @@ class CParserWrapper(ParserBase):
                 if self.index_col is None:
                     values = data.pop(i)
                 else:
-                    values = data.pop(self.index_col[i])
+                    try:
+                        values = data.pop(self.index_col[i])
+                    except IndexError:
+                        print(data)
+                        print(names)
+                        print(self._reader.leading_cols)
+                        print(self.index_col)
+                        expected_cols = len(names) + len(self.index_col)
+                        actual_cols = len(data) + len(self.index_col)
+
+                        # GH 16393
+                        # More helpful error msg when index_col and header=0
+                        # are passed but the number of fields in line 2 is
+                        # incorrect. Similar issues in other lines should be
+                        # caught elsewhere.
+                        raise ParserError("Expected {} fields in line 2, "
+                                          "saw {}".format(expected_cols,
+                                                          actual_cols))
 
                 values = self._maybe_parse_dates(values, i,
                                                  try_parse_dates=True)

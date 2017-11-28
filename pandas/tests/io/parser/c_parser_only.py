@@ -19,6 +19,7 @@ import pandas.util.testing as tm
 from pandas import DataFrame
 from pandas import compat
 from pandas.compat import StringIO, range, lrange
+from pandas.errors import ParserError
 
 
 class CParserTests(object):
@@ -505,3 +506,28 @@ No,No,No"""
             ['x' * (1 << 20) for _ in range(2100)]))
         df = self.read_csv(csv, low_memory=False)
         assert not df.empty
+
+#     def test_index_col_(self):
+#         # GH 16393
+#         # Testing errors with read_csv when the user passes an index_col
+#         # but the input data does not have the right shape. If there are
+#         # too many fields after line 2 the C parser will throw
+#         # error. The python parser will try to coerce the data into an
+#         # appropriate shape.
+#
+#         data = """col1
+# a,b
+# 1,2,3"""
+#
+#         msg = "Expected 2 fields in line 3, saw 3"
+#         with tm.assert_raises_regex(ParserError, msg):
+#             self.read_csv(StringIO(data), index_col=[0], header=0)
+#
+#         data = """col1,col2
+# a,b,c,d
+# 1,2,3,4
+# g,h,i,j,k"""
+#
+#         msg = "Expected 4 fields in line 4, saw 5"
+#         with tm.assert_raises_regex(ParserError, msg):
+#             self.read_csv(StringIO(data), index_col=[0, 1], header=0)

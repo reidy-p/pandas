@@ -12,7 +12,7 @@ import pandas.util.testing as tm
 
 from pandas import DataFrame, Index, MultiIndex
 from pandas.compat import StringIO
-
+from pandas.errors import ParserError
 
 class IndexColTests(object):
 
@@ -141,3 +141,39 @@ baz,7,8,9
         result = self.read_csv(StringIO(data), index_col=False)
         expected = DataFrame([], columns=['x', 'y'])
         tm.assert_frame_equal(result, expected)
+
+    def test_index_col_too_many_fields(self):
+        # GH 16393
+        # Testing errors where the user passes an index_col and header=0
+        # but the input data does not have the right shape
+
+        data = """col1
+1,2,3
+a,b,c
+"""
+
+        msg = "Expected 2 fields in line 2, saw 3"
+        with tm.assert_raises_regex(ParserError, msg):
+            self.read_csv(StringIO(data), index_col=[0], header=0)
+
+        data = """col1,col2
+a,b,c,d,e
+1,2,3,4,5
+"""
+
+        msg = "Expected 4 fields in line 2, saw 5"
+        with tm.assert_raises_regex(ParserError, msg):
+            self.read_csv(StringIO(data), index_col=[0, 2], header=0)
+
+        data = """col1,col2
+a,b,c
+d,e,f
+g,h,i
+1,2,3,4,5
+j,k,l
+"""
+
+        msg = "Expected 3 fields in line 5, saw 5"
+        with tm.assert_raises_regex(ParserError, msg):
+            self.read_csv(StringIO(data), index_col=[0], header=0)
+
