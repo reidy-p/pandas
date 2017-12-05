@@ -106,6 +106,7 @@ class Block(PandasObject):
     _concatenator = staticmethod(np.concatenate)
 
     def __init__(self, values, placement, ndim=None, fastpath=False):
+        # something wrong with ndim
         if ndim is None:
             ndim = values.ndim
         elif values.ndim != ndim:
@@ -207,7 +208,7 @@ class Block(PandasObject):
             placement = self.mgr_locs
         if ndim is None:
             ndim = self.ndim
-
+            # ndim = self.to_dense().ndim
         return make_block(values, placement=placement, ndim=ndim, **kwargs)
 
     def make_block_scalar(self, values, **kwargs):
@@ -544,6 +545,9 @@ class Block(PandasObject):
         return self.split_and_operate(None, f, False)
 
     def astype(self, dtype, copy=False, errors='raise', values=None, **kwargs):
+        print('self', self)
+        print('self.ndim', self.ndim)
+        print(self.to_dense().ndim)
         return self._astype(dtype, copy=copy, errors=errors, values=values,
                             **kwargs)
 
@@ -3338,6 +3342,8 @@ class BlockManager(PandasObject):
                                             copy=align_copy)
 
             kwargs['mgr'] = self
+            print('self', self)
+            print('self.ndim', self.ndim)
             applied = getattr(b, f)(**kwargs)
             result_blocks = _extend_blocks(applied, result_blocks)
 
