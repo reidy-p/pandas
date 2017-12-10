@@ -929,6 +929,9 @@ class _MergeOperation(object):
             if lk_is_cat and rk_is_cat:
                 if lk.is_dtype_equal(rk):
                     continue
+                # else:
+                #     raise ValueError("You are merging on categorical columns"
+                #                      " that are not compatible.")
 
             elif lk_is_cat or rk_is_cat:
                 pass

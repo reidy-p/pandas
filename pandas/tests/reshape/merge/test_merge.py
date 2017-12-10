@@ -1639,6 +1639,8 @@ class TestMergeCategorical(object):
         assert is_categorical_dtype(left.X.values)
         # assert not left.X.values.is_dtype_equal(right.X.values)
 
+        print(left.dtypes)
+        print(right.dtypes)
         merged = pd.merge(left, right, on='X', how=how)
 
         result = merged.dtypes.sort_index()
