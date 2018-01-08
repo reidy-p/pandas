@@ -3513,6 +3513,8 @@ class Index(IndexOpsMixin, PandasObject):
             pass
         elif is_integer(key):
             pass
+        elif kind in ['iloc'] and type(key) == str:
+            raise TypeError("my error msg")
         elif kind in ['iloc', 'getitem']:
             self._invalid_indexer(form, key)
         return key
