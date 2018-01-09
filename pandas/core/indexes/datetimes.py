@@ -1576,7 +1576,7 @@ class DatetimeIndex(DatelikeOps, TimelikeOps, DatetimeIndexOpsMixin,
         assert kind in ['ix', 'loc', 'getitem', None]
 
         if is_float(label) or isinstance(label, time) or is_integer(label):
-            self._invalid_indexer('slice', label)
+            self._invalid_indexer('slice', label, kind)
 
         if isinstance(label, compat.string_types):
             freq = getattr(self, 'freqstr',

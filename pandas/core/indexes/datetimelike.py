@@ -633,7 +633,7 @@ class DatetimeIndexOpsMixin(object):
             is_int = is_integer(key)
             is_flt = is_float(key)
             if kind in ['loc'] and (is_int or is_flt):
-                self._invalid_indexer('index', key)
+                self._invalid_indexer('index', key, kind)
             elif kind in ['ix', 'getitem'] and is_flt:
                 self._invalid_indexer('index', key)
 

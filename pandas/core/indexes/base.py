@@ -39,7 +39,8 @@ from pandas.core.dtypes.common import (
     is_timedelta64_dtype,
     needs_i8_conversion,
     is_iterator, is_list_like,
-    is_scalar)
+    is_scalar,
+    is_string_like)
 from pandas.core.common import (is_bool_indexer, _values_from_object,
                                 _asarray_tuplesafe, _not_none,
                                 _index_labels_to_array)
@@ -1375,11 +1376,11 @@ class Index(IndexOpsMixin, PandasObject):
                                               'string',
                                               'unicode',
                                               'mixed']:
-                    return self._invalid_indexer('label', key)
+                    return self._invalid_indexer('label', key, kind)
 
             elif kind in ['loc'] and is_integer(key):
                 if not self.holds_integer():
-                    return self._invalid_indexer('label', key)
+                    return self._invalid_indexer('label', key, kind)
 
         return key
 
@@ -1558,12 +1559,19 @@ class Index(IndexOpsMixin, PandasObject):
 
         return None
 
-    def _invalid_indexer(self, form, key):
+    def _invalid_indexer(self, form, key, indexer=None):
         """ consistent invalid indexer message """
-        raise TypeError("cannot do {form} indexing on {klass} with these "
-                        "indexers [{key}] of {kind}".format(
-                            form=form, klass=type(self), key=key,
-                            kind=type(key)))
+        if indexer:
+            msg = ("cannot do {form} indexing with {indexer} on {klass} with these "
+                   "indexers [{key}] of {kind}".format(form=form,
+                                                       klass=type(self),
+                                                       key=key, kind=type(key),
+                                                       indexer=indexer))
+        else:
+            msg = ("cannot do {form} indexing on {klass} with these "
+                   "indexers [{key}] of {kind}".format(form=form,
+                                klass=type(self), key=key, kind=type(key)))
+        raise TypeError(msg)
 
     def get_duplicates(self):
         from collections import defaultdict
@@ -3513,9 +3521,14 @@ class Index(IndexOpsMixin, PandasObject):
             pass
         elif is_integer(key):
             pass
-        elif kind in ['iloc'] and type(key) == str:
-            raise TypeError("my error msg")
-        elif kind in ['iloc', 'getitem']:
+        # elif kind == 'iloc' and is_string_like(key):
+        #     raise TypeError("my error msg")
+        elif kind == 'iloc':
+            self._invalid_indexer(form, key, kind)
+        elif kind == 'getitem':
+            print(form)
+            print(key)
+            print(kind)
             self._invalid_indexer(form, key)
         return key
 
@@ -3556,7 +3569,7 @@ class Index(IndexOpsMixin, PandasObject):
         # we are trying to find integer bounds on a non-integer based index
         # this is rejected (generally .loc gets you here)
         elif is_integer(label):
-            self._invalid_indexer('slice', label)
+            self._invalid_indexer('slice', label, kind)
 
         return label
 

@@ -176,7 +176,7 @@ class _NDFrameIndexer(_NDFrameIndexerBase):
         except TypeError as e:
 
             # invalid indexer type vs 'other' indexing errors
-            if 'cannot do' in str(e):
+            if 'cannot' in str(e):
                 raise
             raise IndexingError(key)
 
