@@ -38,7 +38,7 @@ import pytz
 UTC = pytz.utc
 
 
-from tslibs.timedeltas cimport cast_from_unit
+from tslibs.timedeltas cimport cast_from_unit, cast_from_unit_two, cast_from_unit_three
 from tslibs.timedeltas import Timedelta
 from tslibs.timezones cimport (is_utc, is_tzlocal, is_fixed_offset,
                                treat_tz_as_pytz, get_dst_info)
@@ -349,6 +349,7 @@ cpdef array_with_unit_to_datetime(ndarray values, unit, errors='coerce'):
     cdef:
         Py_ssize_t i, j, n=len(values)
         int64_t m
+        int p
         ndarray[float64_t] fvalues
         ndarray mask
         bint is_ignore = errors=='ignore'
@@ -357,6 +358,7 @@ cpdef array_with_unit_to_datetime(ndarray values, unit, errors='coerce'):
         bint need_to_iterate = True
         ndarray[int64_t] iresult
         ndarray[object] oresult
+        ndarray[int64_t] x
 
     assert is_ignore or is_coerce or is_raise
 
@@ -365,10 +367,9 @@ cpdef array_with_unit_to_datetime(ndarray values, unit, errors='coerce'):
             return values.astype('M8[ns]')
         return array_to_datetime(values.astype(object), errors=errors)
 
-    m = cast_from_unit(None, unit)
+    m, p = cast_from_unit(None, unit)
 
     if is_raise:
-
         # try a quick conversion to i8
         # if we have nulls that are not type-compat
         # then need to iterate
@@ -393,7 +394,45 @@ cpdef array_with_unit_to_datetime(ndarray values, unit, errors='coerce'):
             iresult[mask] = iNaT
             return result
 
+    #if issubclass(values.dtype.type, np.float):
+    ##    #np.seterr(over='raise')
+    ##    # This doesn't produce the overflow
+    ##    # (it's an OverflowError that gets converted
+    ##    # to OutOfBounds)
+    #    base = values.astype(int)
+    #    mask = values == iNaT
+    #    frac = values - base
+    #    #print(frac)
+    #    m, p = cast_from_unit_two(unit)
+    #    m, p = cast_from_unit(None, unit)
+    #    if p:
+    #        frac = np.round_(frac, p)
+    #    #print((frac*m)[0])
+    #    #print((base*m + (frac*m)[0])[0])
+    #    #print((base*m + int((frac*m)[0]))[0])
+    ##    #if (values*m > _NS_UPPER_BOUND).any():
+    ##    #    raise OutOfBoundsDatetime
+    ##    #print((base*m).dtype.type)
+    ##    #print((base*m).astype(np.int_, casting='no'))
+    ##    ##print((base*m + frac*m).astype(np.int_) > _NS_UPPER_BOUND)
+    ##    #print(np.iinfo(np.int_).max)
+    ##    #print(np.iinfo(np.long).max)
+    ##    #print(np.iinfo(int).max)
+    ##    #print(np.iinfo(np.intc).max)
+    ##    #if (base*m > np.iinfo(np.int64).max).any():
+    ##    #    raise OutOfBoundsDatetime
+    ##    #print((base*m + frac*m).astype('M8[ns]'))
+    ##    #print(<int64_t> (values[0]*m))
+    ##    #if ((base*m + (frac*m).astype('i8') > _NS_UPPER_BOUND).any() or
+    ##    #    (base*m + (frac*m).astype('i8') < _NS_LOWER_BOUND).any()):
+    ##    #    raise OutOfBoundsDatetime
+    #    res = base*m + (frac*m).astype('i8')
+    #    #res = base*m + (frac*m)
+    #    res[mask] = NPY_NAT
+    #    return res
+
     result = np.empty(n, dtype='M8[ns]')
+
     iresult = result.view('i8')
 
     try:

@@ -194,7 +194,7 @@ cpdef array_to_timedelta64(ndarray[object] values, unit='ns', errors='raise'):
     return iresult
 
 
-cpdef inline int64_t cast_from_unit(object ts, object unit) except? -1:
+cpdef cast_from_unit(object ts, object unit):
     """ return a casting of the unit represented to nanoseconds
         round the fractional part of a float to our precision, p """
     cdef:
@@ -227,7 +227,7 @@ cpdef inline int64_t cast_from_unit(object ts, object unit) except? -1:
 
     # just give me the unit back
     if ts is None:
-        return m
+        return m, p
 
     # cast the unit, multiply base/frace separately
     # to avoid precision issues from float -> int
@@ -237,6 +237,84 @@ cpdef inline int64_t cast_from_unit(object ts, object unit) except? -1:
         frac = round(frac, p)
     return <int64_t> (base * m) + <int64_t> (frac * m)
 
+cpdef tuple cast_from_unit_two(object unit):
+    """ return a casting of the unit represented to nanoseconds
+        round the fractional part of a float to our precision, p """
+    cdef:
+        int64_t m
+        int p
+
+    if unit == 'D' or unit == 'd':
+        m = 1000000000L * 86400
+        p = 9
+    elif unit == 'h':
+        m = 1000000000L * 3600
+        p = 9
+    elif unit == 'm':
+        m = 1000000000L * 60
+        p = 9
+    elif unit == 's':
+        m = 1000000000L
+        p = 9
+    elif unit == 'ms':
+        m = 1000000L
+        p = 6
+    elif unit == 'us':
+        m = 1000L
+        p = 3
+    elif unit == 'ns' or unit is None:
+        m = 1L
+        p = 0
+    else:
+        raise ValueError("cannot cast unit {0}".format(unit))
+
+    return m, p
+
+cpdef ndarray[int64_t] cast_from_unit_three(ndarray[double] array_of_nums, object unit):
+    cdef:
+        int64_t m
+        int p
+        ndarray[int64_t] res
+
+    if unit == 'D' or unit == 'd':
+        m = 1000000000L * 86400
+        p = 6
+    elif unit == 'h':
+        m = 1000000000L * 3600
+        p = 6
+    elif unit == 'm':
+        m = 1000000000L * 60
+        p = 6
+    elif unit == 's':
+        m = 1000000000L
+        p = 6
+    elif unit == 'ms':
+        m = 1000000L
+        p = 3
+    elif unit == 'us':
+        m = 1000L
+        p = 0
+    elif unit == 'ns' or unit is None:
+        m = 1L
+        p = 0
+    else:
+        raise ValueError("cannot cast unit {0}".format(unit))
+
+    res = np.empty((len(array_of_nums),), dtype=np.int)
+
+    # cast the unit, multiply base/frace separately
+    # to avoid precision issues from float -> int
+    for num,i in enumerate(array_of_nums):
+        if not np.isnan(i):
+            base = <int64_t> i
+            frac = i - base
+            if p:
+                frac = round(frac, p)
+            res[num] =  <int64_t> (base *m) + <int64_t> (frac *m)
+        else:
+            res[num] = NPY_NAT
+
+    return res
 
 cdef inline _decode_if_necessary(object ts):
     # decode ts if necessary
@@ -818,7 +896,7 @@ cdef class _Timedelta(timedelta):
     def nanoseconds(self):
         """
         Return the number of nanoseconds (n), where 0 <= n < 1 microsecond.
-       
+
         Returns
         -------
         int

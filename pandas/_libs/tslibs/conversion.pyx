@@ -286,7 +286,8 @@ cdef convert_to_tsobject(object ts, object tz, object unit,
         if ts == NPY_NAT:
             obj.value = NPY_NAT
         else:
-            ts = ts * cast_from_unit(None, unit)
+            m, p = cast_from_unit(None, unit)
+            ts = ts * m 
             obj.value = ts
             dt64_to_dtstruct(ts, &obj.dts)
     elif is_float_object(ts):
